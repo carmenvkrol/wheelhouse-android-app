@@ -1,5 +1,6 @@
 package com.wheelhouse.app.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -24,9 +26,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -39,7 +44,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -1139,6 +1143,19 @@ private fun OptionsRow(
     }
 }
 
+/**
+ * A Material button per style, not a styled `Text`.
+ *
+ * The custom version put `clickable(role = Role.Button)` on the `Text` itself, so one
+ * semantics node carried both the text and the role — and the accessibility delegate
+ * writes `className` in order, letting the text's `android.widget.TextView` clobber the
+ * role's `android.widget.Button` (compose-ui 1.6.8, populateAccessibilityNodeInfoProperties).
+ * TalkBack reads the role off `className`, so it announced the label and no role at all.
+ *
+ * Material's buttons keep the role on the container and the text on a child, which also
+ * buys the 48dp minimum touch target (`minimumInteractiveComponentSize` inside
+ * `Surface(onClick)`) that 12.5sp text plus 9dp padding fell ~13dp short of.
+ */
 @Composable
 private fun OptionButton(
     option: DecisionOption,
@@ -1147,33 +1164,61 @@ private fun OptionButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val background = if (style == OptionButtonStyle.PRIMARY) Ink else Paper
-    val border = if (style == OptionButtonStyle.PRIMARY) Ink else Line
     val ink = when (style) {
         OptionButtonStyle.PRIMARY -> Paper
         OptionButtonStyle.GHOST -> Ink2
         OptionButtonStyle.PLAIN -> Ink
     }
-    Text(
-        option.label,
-        // alpha goes first (outermost) so it fades the whole button — box, border, and
-        // text together. Placed after background/border it only faded the text, and on
-        // this device that combination went fully blank on the enabled→disabled→enabled
-        // transition instead of just dimming (a real recomposition/layer bug, not a
-        // rendering nuance to preserve).
-        modifier = modifier
-            .alpha(if (enabled) 1f else 0.4f)
-            .clip(RoundedCornerShape(7.dp))
-            .background(background)
-            .border(1.dp, border, RoundedCornerShape(7.dp))
-            .clickable(enabled = enabled, onClickLabel = option.label, role = Role.Button, onClick = onClick)
-            .padding(vertical = 9.dp),
-        fontSize = 12.5.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = ink,
-        textAlign = TextAlign.Center,
-    )
+    val label: @Composable () -> Unit = {
+        Text(
+            option.label,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+        )
+    }
+    // Disabled reads as a fade of the whole button, as before — but through Material's
+    // disabled* colours rather than an `alpha` layer over the box, which is what blanked
+    // the button on the enabled -> disabled -> enabled transition.
+    when (style) {
+        OptionButtonStyle.PRIMARY -> Button(
+            onClick = onClick,
+            modifier = modifier,
+            enabled = enabled,
+            shape = OptionButtonShape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Ink,
+                contentColor = ink,
+                disabledContainerColor = Ink.copy(alpha = 0.4f),
+                disabledContentColor = ink.copy(alpha = 0.7f),
+            ),
+            elevation = null,
+            contentPadding = OptionButtonPadding,
+            content = { label() },
+        )
+        OptionButtonStyle.GHOST, OptionButtonStyle.PLAIN -> OutlinedButton(
+            onClick = onClick,
+            modifier = modifier,
+            enabled = enabled,
+            shape = OptionButtonShape,
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = Paper,
+                contentColor = ink,
+                disabledContainerColor = Paper,
+                disabledContentColor = ink.copy(alpha = 0.4f),
+            ),
+            border = BorderStroke(1.dp, if (enabled) Line else Line.copy(alpha = 0.4f)),
+            contentPadding = OptionButtonPadding,
+            content = { label() },
+        )
+    }
 }
+
+private val OptionButtonShape = RoundedCornerShape(7.dp)
+
+/** Horizontal room for "Re-enter, more aggressive"; vertical is governed by Material's 40dp
+ *  MinHeight and the 48dp touch target, so 9dp here only matters for taller labels. */
+private val OptionButtonPadding = PaddingValues(horizontal = 6.dp, vertical = 9.dp)
 
 /**
  * Branch cards pick a shape, not an accept/reject/defer verb. `is_default` renders as the
