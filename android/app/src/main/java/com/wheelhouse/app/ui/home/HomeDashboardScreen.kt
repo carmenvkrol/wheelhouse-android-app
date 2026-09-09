@@ -54,10 +54,15 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.CollectionInfo
+import androidx.compose.ui.semantics.CollectionItemInfo
+import androidx.compose.ui.semantics.collectionInfo
+import androidx.compose.ui.semantics.collectionItemInfo
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -1067,10 +1072,27 @@ private fun ReasonsDisclosure(reasons: List<String>, openByDefault: Boolean, mod
             )
         }
         if (expanded) {
-            Column(Modifier.padding(top = 9.dp)) {
-                reasons.forEach {
-                    Row(Modifier.padding(bottom = 4.dp)) {
-                        Text("•  ", fontSize = 11.5.sp, color = Ink2)
+            Column(Modifier
+                .semantics {
+                    collectionInfo = CollectionInfo (
+                        reasons.size,
+                        columnCount = 1
+                    )
+                }
+                .padding(top = 9.dp)) {
+                reasons.forEachIndexed { index, it ->
+                    Row(Modifier
+                        .semantics {
+                            collectionItemInfo = CollectionItemInfo (
+                                rowIndex = index,
+                                rowSpan = 1,
+                                columnIndex = 0,
+                                columnSpan = 1
+                            )
+                        }
+                        .padding(bottom = 4.dp)
+                    ) {
+                        Text("•  ", fontSize = 11.5.sp, color = Ink2, modifier = Modifier.clearAndSetSemantics{})
                         Text(it, fontSize = 11.5.sp, color = Ink2, lineHeight = 16.sp)
                     }
                 }
