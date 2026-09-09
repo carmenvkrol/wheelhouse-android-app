@@ -1055,7 +1055,7 @@ private fun ReasonsDisclosure(reasons: List<String>, openByDefault: Boolean, mod
                     role = Role.Button
                     stateDescription = if (expanded) "Expanded" else "Collapsed"
                 }
-                .clickable() { expanded = !expanded },
+                .clickable { expanded = !expanded },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(if (expanded) "▾" else "▸", fontSize = 9.sp, color = Ink3)
