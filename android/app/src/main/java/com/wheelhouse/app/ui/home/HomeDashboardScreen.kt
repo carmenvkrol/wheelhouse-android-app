@@ -55,6 +55,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -1046,10 +1050,12 @@ private fun ReasonsDisclosure(reasons: List<String>, openByDefault: Boolean, mod
         Row(
             Modifier
                 .fillMaxWidth()
-                .clickable(
-                    onClickLabel = if (expanded) "Collapse reasons" else "Expand reasons",
-                    role = Role.Button,
-                ) { expanded = !expanded },
+                .clearAndSetSemantics {
+                    contentDescription = "Why the engine wants this (${reasons.size})"
+                    role = Role.Button
+                    stateDescription = if (expanded) "Expanded" else "Collapsed"
+                }
+                .clickable() { expanded = !expanded },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(if (expanded) "▾" else "▸", fontSize = 9.sp, color = Ink3)
