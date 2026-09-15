@@ -67,5 +67,5 @@ silently discards a semantics `Role` when a node carries both text and a role.
 
 ## Credits
 
-Design and code by Carmen Krol, with Claude. The requirements and the underlying idea are
-Patrick Dowell's; he contributed no code to what's published here.
+Design and code by [Carmen Krol](https://www.linkedin.com/in/carmenvkrol/), with Claude. The requirements and the underlying idea are
+[Patrick Dowell's](https://github.com/patrick-dowell); he contributed no code to what's published here.
