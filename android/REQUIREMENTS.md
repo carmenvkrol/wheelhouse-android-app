@@ -7,6 +7,9 @@ This is a requirements document, not a design document. It says *what* the app m
 
 ---
 
+> **Note:** section 1 ("Why this exists") is omitted from this public copy.
+> Numbering is unchanged, so section references elsewhere still resolve.
+
 ## 2. Success criteria — the bar
 
 Set by Patrick 2026-07-27. The instrument succeeds if it produces a clear answer, including a clear *no*. All measured at the **floor** fill assumption, net, on total leveraged capital:
