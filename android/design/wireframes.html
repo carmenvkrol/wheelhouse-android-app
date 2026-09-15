@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WheelHouse Android — structural wireframes (REQUIREMENTS v0.8)</title>
+<style>
+  :root {
+    --ink:#1a1a1a; --ink-2:#5c5c5c; --ink-3:#8e8e8e;
+    --line:#d8d5d0; --line-2:#ebe8e3; --paper:#fff; --bg:#f2f0ec; --fill:#f7f5f2;
+    --warn-bg:#fdf3e0; --warn-line:#e0b768; --warn-ink:#8a5f14;
+    --alarm-bg:#fdeceb; --alarm-line:#dc9a95; --alarm-ink:#96322b;
+    --ok:#4a7c59; --vega:#5b6f9c; --vega-bg:#eef1f7;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:32px 24px 80px; background:var(--bg); color:var(--ink);
+    font:14px/1.5 ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  h1 { font-size:20px; margin:0 0 6px; letter-spacing:-.01em; }
+  .sub { color:var(--ink-2); max-width:74ch; margin:0 0 8px; font-size:13px; }
+  .sub code { background:#e6e3de; padding:1px 5px; border-radius:3px; font-size:12px; }
+  .vtag { display:inline-block; font-size:11px; font-weight:650; padding:2px 8px; border-radius:4px;
+    background:var(--ink); color:#fff; letter-spacing:.02em; margin-bottom:10px; }
+
+  .controls { position:sticky; top:0; z-index:50; background:rgba(242,240,236,.96);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
+    margin:16px -24px 28px; padding:14px 24px; display:flex; gap:28px; flex-wrap:wrap; align-items:center; }
+  .ctl-group { display:flex; align-items:center; gap:10px; }
+  .ctl-label { font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-3); font-weight:600; }
+  .seg { display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:var(--paper); }
+  .seg button { font:inherit; font-size:12px; padding:5px 11px; border:0; background:transparent;
+    cursor:pointer; color:var(--ink-2); border-right:1px solid var(--line-2); }
+  .seg button:last-child { border-right:0; }
+  .seg button[aria-pressed="true"] { background:var(--ink); color:#fff; }
+  .hint { font-size:12px; color:var(--ink-3); font-style:italic; }
+
+  .gallery { display:flex; flex-wrap:wrap; gap:40px 32px; align-items:flex-start; }
+  figure { margin:0; width:380px; }
+  figcaption { margin-top:14px; }
+  .cap-title { font-weight:650; font-size:13.5px; margin-bottom:4px; }
+  .cap-title span.sec { font-weight:400; color:var(--ink-3); }
+  .cap-title .new { background:var(--warn-bg); color:var(--warn-ink); border:1px solid var(--warn-line);
+    font-size:9.5px; padding:1px 5px; border-radius:3px; font-weight:650; margin-left:5px; vertical-align:1px; }
+  .cap-body { font-size:12.5px; color:var(--ink-2); line-height:1.55; }
+  .cap-body b { color:var(--ink); }
+  .cap-body code { background:#e6e3de; padding:1px 4px; border-radius:3px; font-size:11px; }
+
+  .phone { width:380px; height:790px; background:var(--paper); border:1px solid var(--line);
+    border-radius:22px; overflow:hidden; display:flex; flex-direction:column; position:relative;
+    box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.05); }
+  .statusbar { height:26px; flex:none; display:flex; align-items:center; justify-content:space-between;
+    padding:0 16px; font-size:10px; color:var(--ink-3); border-bottom:1px solid var(--line-2); }
+  .appbar { flex:none; padding:12px 16px 0; }
+  .appbar-row { display:flex; align-items:baseline; justify-content:space-between; }
+  .screen-title { font-size:17px; font-weight:650; letter-spacing:-.01em; }
+  .band-chip { font-size:10.5px; border:1px solid var(--line); border-radius:20px; padding:3px 9px;
+    color:var(--ink-2); background:var(--fill); white-space:nowrap; }
+  .band-chip b { color:var(--ink); font-weight:650; }
+  .chrome { flex:none; padding:8px 16px 0; display:flex; flex-direction:column; gap:6px; }
+  .freshline { font-size:11px; color:var(--ink-3); padding-bottom:8px; border-bottom:1px solid var(--line-2); }
+  .banner { border-radius:7px; padding:8px 11px; font-size:11.5px; line-height:1.45; border:1px solid;
+    display:flex; gap:8px; align-items:flex-start; }
+  .banner .dot { width:7px; height:7px; border-radius:50%; flex:none; margin-top:4px; }
+  .banner.warn { background:var(--warn-bg); border-color:var(--warn-line); color:var(--warn-ink); }
+  .banner.warn .dot { background:var(--warn-line); }
+  .banner.alarm { background:var(--alarm-bg); border-color:var(--alarm-line); color:var(--alarm-ink); }
+  .banner.alarm .dot { background:var(--alarm-line); }
+  .banner.paused { background:var(--fill); border-color:var(--line); color:var(--ink-2); }
+  .banner.paused .dot { background:var(--ink-3); }
+  .banner b { font-weight:650; }
+  .body { flex:1; overflow-y:auto; padding:14px 16px 16px; }
+  .body::-webkit-scrollbar { width:5px; }
+  .body::-webkit-scrollbar-thumb { background:var(--line); border-radius:3px; }
+  .nav { flex:none; display:flex; border-top:1px solid var(--line-2); background:var(--paper); }
+  .nav div { flex:1; text-align:center; padding:9px 2px 11px; font-size:9.5px; color:var(--ink-3);
+    border-top:2px solid transparent; }
+  .nav div.on { color:var(--ink); border-top-color:var(--ink); font-weight:600; }
+  .nav .glyph { display:block; width:17px; height:17px; margin:0 auto 4px; border:1.5px solid currentColor;
+    border-radius:4px; opacity:.75; }
+  .nav div.on .glyph { background:currentColor; opacity:1; }
+  .badge { display:inline-block; min-width:15px; padding:0 4px; margin-left:3px; background:var(--ink);
+    color:#fff; border-radius:8px; font-size:9px; line-height:15px; font-weight:700; vertical-align:1px; }
+
+  .section-h { font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-3);
+    font-weight:650; margin:18px 0 9px; display:flex; justify-content:space-between; align-items:baseline; }
+  .section-h.first { margin-top:2px; }
+  .section-h a { color:var(--ink-3); text-decoration:none; font-weight:500; letter-spacing:0;
+    text-transform:none; font-size:11px; }
+  .qnum { display:inline-flex; width:14px; height:14px; border-radius:50%; background:var(--line-2);
+    color:var(--ink-2); font-size:9px; align-items:center; justify-content:center; margin-right:5px;
+    font-weight:700; letter-spacing:0; vertical-align:0; }
+
+  .quiet { display:flex; align-items:center; gap:9px; border:1px solid var(--line-2); background:var(--fill);
+    border-radius:8px; padding:11px 12px; }
+  .quiet .tick { width:19px; height:19px; border-radius:50%; border:1.5px solid var(--ok); flex:none; position:relative; }
+  .quiet .tick::after { content:""; position:absolute; left:5.5px; top:4px; width:5px; height:9px;
+    border:solid var(--ok); border-width:0 1.5px 1.5px 0; transform:rotate(42deg); }
+  .quiet-t { font-size:13px; font-weight:650; }
+  .quiet-s { font-size:11px; color:var(--ink-2); margin-top:1px; line-height:1.4; }
+
+  .pnl-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line-2);
+    border:1px solid var(--line-2); border-radius:8px; overflow:hidden; }
+  .pnl-grid > div { background:var(--paper); padding:9px 6px; text-align:center; }
+  .pw-l { font-size:9px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-3); margin-bottom:4px; }
+  .pw-v { font-size:14px; font-weight:660; letter-spacing:-.02em; }
+  .pw-v.neg { color:var(--alarm-ink); }
+  .pw-split { font-size:8.5px; color:var(--ink-3); margin-top:3px; line-height:1.35; }
+  .band-foot { font-size:10px; color:var(--ink-3); margin-top:6px; text-align:right; }
+
+  .lev { border:1px solid var(--line-2); border-radius:8px; padding:12px; }
+  .lev-bar { height:22px; border-radius:5px; background:var(--fill); border:1px solid var(--line-2);
+    overflow:hidden; margin-bottom:8px; }
+  .lev-bar i { display:block; height:100%; background:#ddd8d0; }
+  .lev-nums { display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-2); }
+  .lev-nums b { display:block; font-size:13.5px; color:var(--ink); letter-spacing:-.02em; }
+  .lev-note { font-size:10.5px; color:var(--ink-3); margin-top:8px; line-height:1.45;
+    border-top:1px solid var(--line-2); padding-top:8px; }
+
+  .card { border:1px solid var(--line); border-radius:10px; padding:13px; margin-bottom:11px; background:var(--paper); }
+  .card.urgent { border-color:var(--warn-line); border-width:1.5px; }
+  .card.vega { border-color:var(--vega); border-width:1.5px; }
+  .card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:9px; }
+  .card-action { font-size:14.5px; font-weight:650; letter-spacing:-.01em; line-height:1.35; }
+  .card-type { font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-3);
+    font-weight:650; margin-bottom:3px; }
+  .card-type.v { color:var(--vega); }
+  .deadline { font-size:11px; font-weight:650; white-space:nowrap; padding:3px 8px; border-radius:5px;
+    background:var(--fill); color:var(--ink-2); border:1px solid var(--line-2); }
+  .deadline.hot { background:var(--warn-bg); color:var(--warn-ink); border-color:var(--warn-line); }
+  .headline-num { display:flex; align-items:baseline; gap:7px; margin-bottom:10px; padding-bottom:10px;
+    border-bottom:1px solid var(--line-2); }
+  .hn-value { font-size:25px; font-weight:660; letter-spacing:-.03em; line-height:1; }
+  .hn-unit { font-size:11.5px; color:var(--ink-2); line-height:1.25; }
+  .hn-gate { font-size:10.5px; color:var(--ok); margin-left:auto; font-weight:600; text-align:right; }
+  .kv { display:grid; grid-template-columns:repeat(3,1fr); gap:9px 6px; margin-bottom:11px; }
+  .kv-l { font-size:9.5px; color:var(--ink-3); margin-bottom:2px; }
+  .kv-v { font-size:12.5px; font-weight:600; }
+  .kv-v em { font-style:normal; font-size:9.5px; color:var(--ink-3); font-weight:500; }
+  .reasons { border-top:1px solid var(--line-2); padding-top:9px; margin-bottom:11px; }
+  .reasons summary { font-size:11px; color:var(--ink-2); cursor:pointer; list-style:none;
+    display:flex; align-items:center; gap:5px; }
+  .reasons summary::-webkit-details-marker { display:none; }
+  .reasons summary::before { content:"▸"; font-size:9px; color:var(--ink-3); transition:transform .15s; }
+  .reasons[open] summary::before { transform:rotate(90deg); }
+  .reasons ul { margin:9px 0 0; padding:0 0 0 16px; }
+  .reasons li { font-size:11.5px; color:var(--ink-2); margin-bottom:4px; line-height:1.45; }
+  .actions { display:flex; gap:7px; }
+  .btn { flex:1; font:inherit; font-size:12.5px; font-weight:600; padding:9px 4px; border-radius:7px;
+    border:1px solid var(--line); background:var(--paper); color:var(--ink); cursor:pointer; }
+  .btn.primary { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .btn.ghost { flex:0 0 78px; color:var(--ink-2); }
+  .btn:disabled { opacity:.4; cursor:not-allowed; }
+  .verbmap { font-size:9.5px; color:var(--ink-3); margin-top:7px; font-style:italic; text-align:center; }
+  .offline-note { margin-top:9px; font-size:11px; line-height:1.45; padding:8px 10px; background:var(--fill);
+    border:1px dashed var(--line); border-radius:6px; color:var(--ink-2); }
+
+  .attr { border-radius:7px; padding:9px 10px; margin-bottom:10px; font-size:11px; line-height:1.45; }
+  .attr.v { background:var(--vega-bg); border:1px solid #c6cfe0; color:#3d4d70; }
+  .attr.d { background:var(--alarm-bg); border:1px solid var(--alarm-line); color:var(--alarm-ink); }
+  .attr-h { font-weight:700; margin-bottom:6px; display:flex; justify-content:space-between; }
+  .split { height:7px; border-radius:4px; overflow:hidden; display:flex; margin-bottom:5px; background:#fff; }
+  .split i { display:block; height:100%; }
+  .split .sd { background:var(--alarm-line); }
+  .split .sv { background:var(--vega); }
+  .split-key { display:flex; justify-content:space-between; font-size:9.5px; opacity:.85; }
+
+  .branch { border:1px solid var(--line); border-radius:8px; padding:10px 11px; margin-bottom:7px; }
+  .branch.sel { border-color:var(--ink); border-width:1.5px; background:var(--fill); }
+  .branch-t { font-size:12.5px; font-weight:650; display:flex; align-items:center; gap:7px; }
+  .radio { width:13px; height:13px; border-radius:50%; border:1.5px solid var(--ink-3); flex:none; position:relative; }
+  .branch.sel .radio { border-color:var(--ink); }
+  .branch.sel .radio::after { content:""; position:absolute; inset:2.5px; border-radius:50%; background:var(--ink); }
+  .branch-d { font-size:10.5px; color:var(--ink-2); margin-top:4px; padding-left:20px; line-height:1.45; }
+  .sugg { font-size:8.5px; font-weight:650; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--ink-3); border:1px solid var(--line); border-radius:3px; padding:1px 5px; margin-left:auto; }
+  .pick-note { font-size:9.5px; color:var(--ink-3); text-align:center; margin-top:7px; }
+
+  .scrim { position:absolute; inset:0; background:rgba(20,18,16,.34); z-index:5; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; z-index:6; background:var(--paper);
+    border-radius:16px 16px 0 0; padding:8px 16px 18px; border-top:1px solid var(--line); }
+  .grabber { width:34px; height:4px; border-radius:2px; background:var(--line); margin:0 auto 14px; }
+  .sheet h3 { font-size:15.5px; margin:0 0 5px; font-weight:650; }
+  .sheet .why { font-size:11.5px; color:var(--ink-2); margin:0 0 13px; line-height:1.5; }
+  .field { border:1.5px solid var(--ink); border-radius:8px; padding:10px 11px; min-height:68px;
+    font-size:12.5px; color:var(--ink-3); line-height:1.45; }
+  .field .caret { display:inline-block; width:1.5px; height:14px; background:var(--ink);
+    vertical-align:-3px; animation:blink 1.1s step-end infinite; }
+  @keyframes blink { 50% { opacity:0; } }
+  .prompts { font-size:10.5px; color:var(--ink-3); margin:9px 0 14px; line-height:1.5; }
+
+  .agg { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:var(--line-2);
+    border:1px solid var(--line-2); border-radius:8px; overflow:hidden; margin-bottom:2px; }
+  .agg > div { background:var(--paper); padding:10px; }
+  .sg-label { font-size:10.5px; color:var(--ink-3); margin-bottom:3px; }
+  .sg-value { font-size:15px; font-weight:640; letter-spacing:-.02em; }
+  .sg-value small { font-size:10px; font-weight:500; color:var(--ink-3); letter-spacing:0; }
+  .meter { height:3px; background:var(--line-2); border-radius:2px; margin-top:6px; overflow:hidden; }
+  .meter i { display:block; height:100%; background:var(--ink-2); }
+  .meter i.hot { background:var(--warn-line); }
+  .prow { display:flex; align-items:center; gap:10px; padding:11px 2px; border-bottom:1px solid var(--line-2); }
+  .wheel { flex:none; width:30px; }
+  .wheel-dots { display:flex; gap:2px; margin-bottom:4px; }
+  .wheel-dots i { width:6px; height:6px; border-radius:50%; background:var(--line); }
+  .wheel-dots i.on { background:var(--ink); }
+  .wheel-lab { font-size:8px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.04em; }
+  .pmain { flex:1; min-width:0; }
+  .pticker { font-size:13.5px; font-weight:650; letter-spacing:-.01em; display:flex; align-items:center; gap:6px; }
+  .pmeta { font-size:10.5px; color:var(--ink-3); margin-top:2px; }
+  .exit-clock { font-size:9.5px; padding:1px 5px; border-radius:3px; background:var(--fill);
+    border:1px solid var(--line-2); color:var(--ink-2); font-weight:600; }
+  .exit-clock.soon { background:var(--warn-bg); border-color:var(--warn-line); color:var(--warn-ink); }
+  .pright { text-align:right; flex:none; }
+  .pnl { font-size:13px; font-weight:650; letter-spacing:-.01em; }
+  .pnl.neg { color:var(--alarm-ink); }
+  .pnl.negv { color:var(--vega); }
+  .amark { font-size:9px; padding:1px 5px; border-radius:3px; display:inline-block; font-weight:650; }
+  .amark.d { background:var(--alarm-bg); border:1px solid var(--alarm-line); color:var(--alarm-ink); }
+  .amark.v { background:var(--vega-bg); border:1px dashed var(--vega); color:var(--vega); }
+  .amark.t { background:transparent; border:1px solid var(--line-2); color:var(--ink-3); }
+  .distbar { display:inline-block; width:34px; height:3px; background:var(--line-2); border-radius:2px;
+    position:relative; overflow:hidden; vertical-align:middle; }
+
+  /* stacked position row: contract identity + economics first, engine state second */
+  .prow.stack { flex-direction:column; align-items:stretch; gap:0; padding:10px 2px 11px; }
+  .pl1 { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .pident { display:flex; align-items:baseline; gap:6px; min-width:0; flex-wrap:wrap; }
+  .pcontract { font-size:11.5px; font-weight:600; color:var(--ink-2); letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums; }
+  .pcontract.none { font-weight:500; color:var(--ink-3); font-style:italic; }
+  .pecon { display:flex; justify-content:space-between; gap:10px; font-size:11px; color:var(--ink-2);
+    margin-top:4px; font-variant-numeric:tabular-nums; }
+  .pecon b { font-weight:650; color:var(--ink); }
+  .pecon .leg { font-weight:650; }
+  .pecon .leg.neg { color:var(--alarm-ink); }
+  .pecon .leg.negv { color:var(--vega); }
+  .pecon .lab { color:var(--ink-3); }
+  .pmanage { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .pmanage .wheel-dots { margin-bottom:0; }
+  .pstate { font-size:9px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.05em; font-weight:650; }
+  .pdist { font-size:10px; color:var(--ink-3); display:inline-flex; align-items:center; gap:4px;
+    font-variant-numeric:tabular-nums; }
+  .stopmeter { height:4px; background:var(--line-2); border-radius:2px; position:relative; overflow:hidden; }
+  .stopmeter i { position:absolute; left:0; top:0; bottom:0; }
+  .stopmeter u { position:absolute; top:-2px; bottom:-2px; width:1.5px; background:var(--ink); }
+  .econ-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line-2);
+    border:1px solid var(--line-2); border-radius:8px; overflow:hidden; }
+  .econ-grid > div { background:var(--paper); padding:10px 11px; }
+  .econ-l { font-size:9.5px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.06em; }
+  .econ-v { font-size:17px; font-weight:650; letter-spacing:-.02em; margin-top:3px; font-variant-numeric:tabular-nums; }
+  .econ-s { font-size:10px; color:var(--ink-3); margin-top:2px; }
+
+  .dhead { padding-bottom:12px; border-bottom:1px solid var(--line-2); }
+  .dticker { font-size:22px; font-weight:660; letter-spacing:-.02em; }
+  .dsub { font-size:11.5px; color:var(--ink-2); margin-top:3px; }
+  .ivrow { display:flex; align-items:center; gap:10px; padding:11px 12px; border:1px solid var(--line-2);
+    border-radius:8px; }
+  .iv-b { text-align:center; flex:1; }
+  .iv-l { font-size:9.5px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.06em; }
+  .iv-v { font-size:19px; font-weight:660; letter-spacing:-.02em; margin-top:2px; }
+  .iv-delta { font-size:11px; font-weight:650; color:var(--vega); }
+  .drow { display:flex; justify-content:space-between; padding:9px 2px; border-bottom:1px solid var(--line-2); font-size:12px; }
+  .drow span:first-child { color:var(--ink-2); }
+  .drow span:last-child { font-weight:600; }
+
+  .hero { border:1px solid var(--line); border-radius:10px; padding:15px; margin-bottom:8px; }
+  .hero-l { font-size:11px; color:var(--ink-2); margin-bottom:11px; line-height:1.45; }
+  .hero-bar { height:30px; border-radius:6px; background:var(--fill); border:1px solid var(--line-2);
+    position:relative; overflow:hidden; margin-bottom:9px; }
+  .hero-bar i { position:absolute; left:0; top:0; bottom:0; background:#ddd8d0; }
+  .hero-nums { display:flex; justify-content:space-between; font-size:11px; color:var(--ink-2); }
+  .hero-nums b { display:block; font-size:15px; color:var(--ink); letter-spacing:-.02em; }
+  .hero-verdict { margin-top:11px; padding-top:11px; border-top:1px solid var(--line-2); font-size:12px;
+    color:var(--ok); font-weight:600; }
+  .conc-row { display:flex; align-items:center; gap:9px; margin-bottom:8px; }
+  .conc-t { width:42px; font-size:11.5px; font-weight:600; }
+  .conc-bar { flex:1; height:7px; background:var(--line-2); border-radius:4px; overflow:hidden; }
+  .conc-bar i { display:block; height:100%; background:var(--ink-2); }
+  .conc-p { width:32px; text-align:right; font-size:11px; color:var(--ink-2); }
+  .killbox { border:1px solid var(--line); border-radius:10px; padding:14px; }
+  .killbox h4 { margin:0 0 5px; font-size:13.5px; font-weight:650; }
+  .killbox p { margin:0 0 12px; font-size:11.5px; color:var(--ink-2); line-height:1.5; }
+  .killbtn { width:100%; font:inherit; font-size:13px; font-weight:650; padding:11px; border-radius:8px;
+    border:1.5px solid var(--ink); background:var(--paper); color:var(--ink); cursor:pointer; }
+  .killbtn.on { background:var(--ink); color:#fff; }
+
+  .homescreen { width:380px; height:790px; border-radius:22px; border:1px solid var(--line);
+    background:linear-gradient(160deg,#e8e4dd,#d9d4cb); padding:26px 18px; position:relative; overflow:hidden; }
+  .hs-time { text-align:center; color:#55504a; margin-bottom:22px; }
+  .hs-time b { display:block; font-size:44px; font-weight:300; letter-spacing:-.02em; line-height:1; }
+  .hs-time span { font-size:12px; }
+  .widget { background:rgba(255,255,255,.94); border-radius:16px; padding:13px 14px;
+    box-shadow:0 2px 8px rgba(0,0,0,.09); }
+  .w-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .w-name { font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); }
+  .w-pend { font-size:10px; font-weight:700; background:var(--ink); color:#fff; border-radius:9px; padding:2px 7px; }
+  .w-main { display:flex; align-items:baseline; gap:7px; margin-bottom:3px; }
+  .w-val { font-size:23px; font-weight:660; letter-spacing:-.03em; }
+  .w-band { font-size:9.5px; color:var(--ink-3); border:1px solid var(--line-2); border-radius:3px; padding:1px 4px; }
+  .w-sub { font-size:10.5px; color:var(--ink-2); margin-bottom:10px; }
+  .w-rows { border-top:1px solid var(--line-2); padding-top:8px; display:flex; flex-direction:column; gap:5px; }
+  .w-row { display:flex; justify-content:space-between; font-size:11px; }
+  .w-row b { font-weight:600; }
+  .w-row .neg { color:var(--alarm-ink); }
+  .w-row .negv { color:var(--vega); }
+  .hs-dock { position:absolute; left:18px; right:18px; bottom:22px; height:64px; border-radius:18px;
+    background:rgba(255,255,255,.4); }
+
+  .notif { background:rgba(255,255,255,.95); border-radius:13px; padding:11px 13px; margin-bottom:9px;
+    box-shadow:0 1px 4px rgba(0,0,0,.07); }
+  .n-top { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+  .n-app { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-3); }
+  .n-chan { font-size:8.5px; padding:1px 5px; border-radius:3px; font-weight:700; }
+  .n-chan.fyi { background:var(--fill); color:var(--ink-3); border:1px solid var(--line-2); }
+  .n-chan.dec { background:var(--warn-bg); color:var(--warn-ink); border:1px solid var(--warn-line); }
+  .n-chan.alarm { background:var(--alarm-bg); color:var(--alarm-ink); border:1px solid var(--alarm-line); }
+  .n-urg { font-size:8.5px; color:var(--ink-3); margin-left:auto; font-style:italic; }
+  .n-title { font-size:12.5px; font-weight:650; margin-bottom:2px; }
+  .n-body { font-size:11px; color:var(--ink-2); line-height:1.45; }
+  .n-actions { display:flex; gap:6px; margin-top:9px; padding-top:8px; border-top:1px solid var(--line-2); }
+  .n-btn { flex:1; text-align:center; font-size:11px; font-weight:650; padding:6px; border-radius:6px;
+    border:1px solid var(--line); color:var(--ink-2); }
+  .n-reply { flex:2; text-align:left; font-size:10.5px; padding:6px 9px; border-radius:14px;
+    border:1px solid var(--line); color:var(--ink-3); font-style:italic; }
+
+  .legend { margin-top:44px; padding:18px 20px; background:var(--paper); border:1px solid var(--line);
+    border-radius:10px; max-width:80ch; font-size:12.5px; color:var(--ink-2); }
+  .legend h2 { font-size:13px; margin:0 0 9px; color:var(--ink); }
+  .legend h2:not(:first-child) { margin-top:20px; }
+  .legend ul { margin:0; padding-left:18px; }
+  .legend li { margin-bottom:7px; line-height:1.55; }
+  .legend b { color:var(--ink); }
+  .legend code { background:#e6e3de; padding:1px 5px; border-radius:3px; font-size:11.5px; }
+  .swatch { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:2px; }
+</style>
+</head>
+<body>
+
+<h1>WheelHouse Android — structural wireframes</h1>
+<span class="vtag">REQUIREMENTS v0.8 · CONTRACT +/v1/pnl +next_auto_exit +urgency · RUBRIC gate matrix · rev 2 after PR #3 review</span>
+<p class="sub">Grey-box on purpose: layout and state logic, not visual design. <strong>The two controls below are global</strong> — every frame reacts. Frames marked <span style="background:#fdf3e0;color:#8a5f14;border:1px solid #e0b768;font-size:9.5px;padding:1px 5px;border-radius:3px;font-weight:650">NEW</span> did not exist in the reviewed set.</p>
+
+<div class="controls">
+  <div class="ctl-group">
+    <span class="ctl-label">Band</span>
+    <div class="seg" id="band-seg">
+      <button data-band="floor" aria-pressed="true">floor</button>
+      <button data-band="policy" aria-pressed="false">policy</button>
+      <button data-band="mid" aria-pressed="false">mid</button>
+    </div>
+  </div>
+  <div class="ctl-group">
+    <span class="ctl-label">Connection</span>
+    <div class="seg" id="state-seg">
+      <button data-state="live" aria-pressed="true">live</button>
+      <button data-state="stale" aria-pressed="false">stale</button>
+      <button data-state="paused" aria-pressed="false">paused</button>
+      <button data-state="offline" aria-pressed="false">offline</button>
+    </div>
+  </div>
+  <span class="hint">Band now reaches the widget — the hardest place to honour §6.7.</span>
+</div>
+
+<div class="gallery" id="gallery"></div>
+
+<div class="legend">
+  <h2>What changed from the reviewed set</h2>
+  <ul>
+    <li><b>Home is a dashboard, not a queue</b> (§6.2). Two frames, because the reframe only works if both states are designed: cards dominating when pending, the four questions carrying the surface when not.</li>
+    <li><b>Two new card types</b> from the gate matrix — and they broke the approve/veto/snooze assumption. See the contract note below.</li>
+    <li><b>The position row leads with the contract, not the engine</b> (PR #3). Identity and economics first — <code>$430 PUT · Jul 31 · ×1</code>, then <code>sold $3.10 → now $6.50</code> — with wheel state, stop clock, distance and attribution demoted to a second line. Cost-to-close earns the row twice over: it is the gain/loss that matters on short premium, and it is the exact number the 2× stop watches. Stock price moved to detail.</li>
+    <li><b>Attribution became a first-class visual</b> (§6.1, and §2's distrust rule). Delta-driven and vega-driven reds are drawn unalike everywhere they appear: row, detail, card, widget, notification.</li>
+    <li><b>Auto-exit clock</b> on every position row and in dashboard question 4.</li>
+    <li><b>Widget and notification triage</b> both got frames, both being v1 now.</li>
+    <li><b>Veto chips dropped</b>, replaced by prompts that insert nothing.</li>
+    <li><b>Book switcher still absent</b> — BASE-only v1 is now official rather than my assumption.</li>
+  </ul>
+
+  <h2>Adopted for the contract schema pass — <code>options[]</code></h2>
+  <ul>
+    <li><b>Settled in PR #3 review:</b> the card carries <code>options[]</code> of <code>{id, label, kind, is_default, requires_reason}</code> and <code>POST /v1/decisions/{id}</code> takes <code>{option_id, reason?}</code>. <code>kind</code> is one of <code>accept | reject | defer | branch</code>, added so §2's veto-rate metric keeps a stable category to count while the labels stay the engine's own words.
+    <br><br><b>The payoff is bigger than the wording.</b> All three cards here now render from the same function: it picks buttons or a radio list by looking at whether any option has <code>kind: "branch"</code>. The card component stopped needing to know the type list — which was the actual problem, since that list has grown twice already.
+    <br><br><b>And <code>kind</code> earns itself immediately.</b> On the vega card, "Hold" is <code>kind: reject</code> — it counts toward veto rate although the word "veto" never appears on screen. On the branch card <em>no</em> option is a reject, so it contributes nothing to that metric, which is correct: declining to re-enter a name is not a vote against the rubric. Under the old fixed verbs both cards would have POSTed <code>approve</code> and the metric would have quietly counted the wrong things.
+    <br><br><b>One thing <code>is_default</code> must not become.</b> It is sent only where the engine genuinely has a proposal — the entry card, which screened the trade and cleared the APR gate. The vega card sends none, because it exists precisely where the 2× rule and the attribution disagree; <em>Exit now</em> and <em>Hold</em> therefore render with equal weight. That matters beyond tidiness: RUBRIC names strict-stops vs. vega-hold as a backtest A/B, and a card that nudges toward exiting biases the forward record of which arm was chosen. <em>Snooze</em> stays visually lighter everywhere, since deferring isn't a third position on the question.
+    <br><br>On the branch card <code>is_default</code> is drawn as an "engine's pick" label with <em>nothing</em> pre-selected and Confirm disabled until the operator taps. Pre-selecting it would make agreeing cost one tap and disagreeing cost two — plus a written reason where <code>requires_reason</code> applies — and §2 judges the strategy on whether veto rate falls across rubric versions. A default that nudges makes that number fall for reasons that have nothing to do with the rubric. Same failure mode as the veto chips: an affordance quietly manufacturing the data that grades the system. The journal should also record <b>whether the submitted option was the default</b>, or the audit trail can't tell a considered choice from a rubber stamp.
+    <br><br><em>Superseded:</em> the italic mapping line under each card used to translate domain verbs back to <code>approve|veto|snooze</code>. It now just prints the option ids and kinds — no translation table for the app to keep in sync.</li>
+  </ul>
+
+  <h2>The other thing the row change needs from the contract</h2>
+  <ul>
+    <li><b><code>/v1/positions</code> doesn't name the fields the new row is built on.</b> The sketch reads "per-underlying wheel state, open legs, P&L bands, margin, next_auto_exit" — enough for the old row, not for this one. It needs, per leg: contract identity (<code>right</code>, <code>strike</code>, <code>expiry</code>, <code>qty</code>), the <b>credit received at open</b>, and the <b>current cost to close</b>. Stock legs need <code>qty</code> and cost basis.
+    <br><br><b>One band subtlety worth writing into the rule.</b> Credit received is a settled cash fact — it has no floor/policy/mid. The cost to close is a live quote and is fully banded. So on a short-premium row exactly one of the two numbers carries a band, and the unrealized P&L inherits its band from the close side alone. That reads as an exception to §6.7 but isn't one; it's the band rule applied correctly to a number that has already happened.</li>
+  </ul>
+
+  <h2>Superseded — the old verb problem</h2>
+  <ul>
+    <li><b>The action verbs don't survive the new card types.</b> <code>approve|veto|snooze</code> reads correctly on an entry proposal. On a vega <code>hold_or_exit</code> card, "approve" means <em>sell</em> and "veto" means <em>hold</em> — a coin-flip to read at 6am, and the gate matrix's own phrasing ("at least get approval before selling") only makes sense if you already know which way round it goes. The post-loss branch card is worse: it's three-way, so it has no veto at all, and has to POST an approve that secretly carries <em>which</em> branch.
+    <br><br>Drawn here the pragmatic way — UI shows the domain verb, POST keeps the contract verb, each card carrying a small italic mapping line. It works, but it means the app maintains a translation table that has to stay in sync with the engine, and every new card type adds a row to it.
+    <br><br><b>Cleaner alternative, if the schema pass is open to it:</b> give the card an <code>options[]</code> array of <code>{id, label, is_default, requires_reason}</code> and let <code>POST /v1/decisions/{id}</code> take <code>{option_id, reason?}</code>. The engine then names its own verbs, the app renders whatever arrives, and <code>requires_reason</code> generalises the veto-reason rule instead of hardcoding it. Given the type list has now grown twice, betting on a third seems safer than betting against.</li>
+  </ul>
+
+  <h2>Still deliberately unresolved</h2>
+  <ul>
+    <li><b>Colour.</b> Four tints, all semantic: <span class="swatch" style="background:#e0b768"></span>caution, <span class="swatch" style="background:#dc9a95"></span>delta-driven / alarm, <span class="swatch" style="background:#5b6f9c"></span>vega-driven, <span class="swatch" style="background:#4a7c59"></span>healthy. The vega blue is the one I'd resist re-picking on purely aesthetic grounds — it carries the "adverse but not structurally wrong" meaning that §6.1 explicitly requires be visible at a glance.</li>
+    <li><b>The fifth nav slot.</b> Folding Decisions into the dashboard freed one, which relieves the pressure I flagged last round about Backtests holding a top-level slot it may not earn. Drawn with Backtests keeping it; Settings (§6.8) is currently homeless and is the other candidate.</li>
+    <li><b>Five benchmark lines</b> — <em>resolved in PR #3 review, not drawn here yet.</em> Small multiples rather than one overlay, and the strategy-vs-JEPQ pair gets its own view, since §2 judges JEPQ-relative performance specifically. Both to be drawn in the backtests pass.</li>
+    <li><b>Reasons are still invented.</b> Every rubric string in these frames is my paraphrase of RUBRIC.md. The fixtures pack replaces them with real payloads, and the entry card's reason list is the thing most likely to change shape when it lands.</li>
+  </ul>
+</div>
+
+<script>
+const DATA = {
+  pnl: {
+    today:{ r:{floor:214,policy:228,mid:239},   u:{floor:-320,policy:-278,mid:-255} },
+    wtd:  { r:{floor:686,policy:724,mid:751},   u:{floor:-320,policy:-278,mid:-255} },
+    mtd:  { r:{floor:2140,policy:2268,mid:2361},u:{floor:-320,policy:-278,mid:-255} },
+    ytd:  { r:{floor:11480,policy:12190,mid:12704},u:{floor:-320,policy:-278,mid:-255} }
+  },
+  capital: { target:200000, deployed:86400, idle:113600 },
+  // Contract identity + economics are now row-level data, not detail-only.
+  // credit = cash actually received at open — a fact, no band. mark = cost to close now — banded.
+  // Unrealized P&L is derived: (credit − mark) × 100 × qty, plus the stock leg where one exists.
+  positions: [
+    { t:"TSLA", state:2, lab:"put", legs:"1 short put · 18 DTE",
+      right:"PUT", strike:290, expiry:"Aug 14", dte:18, qty:1,
+      credit:6.15, mark:{floor:4.73,policy:4.47,mid:4.34},
+      px:312, dist:7.6, delta:-0.24, iv:[78,74], drv:"theta", exit:{type:"stop",d:10} },
+    { t:"MSFT", state:2, lab:"put", legs:"1 short put · 4 DTE",
+      right:"PUT", strike:430, expiry:"Jul 31", dte:4, qty:1,
+      credit:3.10, mark:{floor:6.50,policy:6.15,mid:5.98},
+      px:421, dist:-2.1, delta:-0.52, iv:[54,81], drv:"vega", exit:{type:"stop",d:2} },
+    { t:"AMD", state:3, lab:"call", legs:"100 sh + 1 call · 11 DTE",
+      right:"CALL", strike:165, expiry:"Aug 7", dte:11, qty:1,
+      credit:2.85, mark:{floor:3.75,policy:3.51,mid:3.37},
+      shares:{ qty:100, basis:159.20 },
+      px:158, dist:-4.2, delta:0.31, iv:[63,59], drv:"delta", exit:{type:"expiry",d:11} },
+    { t:"GOOG", state:2, lab:"put", legs:"1 short put · 25 DTE",
+      right:"PUT", strike:175, expiry:"Aug 21", dte:25, qty:1,
+      credit:2.10, mark:{floor:1.22,policy:1.13,mid:1.06},
+      px:181, dist:3.4, delta:-0.29, iv:[66,61], drv:"theta", exit:{type:"stop",d:11} },
+    { t:"NVDA", state:1, lab:"cash", legs:"no open legs",
+      right:null, strike:null, expiry:null, dte:null, qty:0,
+      credit:null, mark:null,
+      px:null, dist:null, delta:null, iv:null, drv:null, exit:null }
+  ],
+  entry: { type:"open_put", action:"Sell 1 TSLA $290 put", sub:"expires Aug 14 · 18 DTE", apr:21.4,
+    options:[ {id:"approve",label:"Approve",kind:"accept",is_default:true},
+              {id:"veto",   label:"Veto",   kind:"reject",requires_reason:true},
+              {id:"snooze", label:"Snooze", kind:"defer"} ],
+    premium:{floor:6.15,policy:6.28,mid:6.40}, iv:78, odds:0.24, deadline:"2h 14m",
+    reasons:["APR gate: 22.1% ≥ 20% target — (0.8 × premium) ÷ margin × 365/14",
+             "Strike $290 sits below the 90-day trailing low of $296",
+             "Price at 38th pct of 52wk range",
+             "No earnings before expiry",
+             "STAPLE tier · 1 contract · 2.9% of target capital"] }
+};
+let BAND="floor", STATE="live";
+const money = n => (n<0?"−$":"$") + Math.abs(Math.round(n)).toLocaleString();
+const kmoney = n => (n<0?"−$":"$") + (Math.abs(n)>=1000 ? (Math.abs(n)/1000).toFixed(1)+"k" : Math.abs(Math.round(n)));
+const smoney = n => (n>0?"+$":n<0?"−$":"$") + Math.abs(Math.round(n)).toLocaleString();
+const prem   = n => "$" + n.toFixed(2);
+
+// P&L is derived from the row's own economics, so the board, the detail view and the
+// stop trigger can never quietly disagree about the same position.
+const optPnl   = (x,b) => x.credit===null ? 0 : (x.credit - x.mark[b]) * 100 * x.qty;
+const stockPnl = x => x.shares ? (x.px - x.shares.basis) * x.shares.qty : 0;
+const posPnl   = (x,b) => optPnl(x,b) + stockPnl(x);
+const stopMult = (x,b) => x.credit ? x.mark[b] / x.credit : null;   // the 2×-credit stop watches this
+
+function chrome(){
+  const age = STATE==="live"?"42s":STATE==="offline"?"22m":"14m";
+  let o="";
+  if(STATE==="offline") o+=`<div class="banner alarm"><span class="dot"></span><span><b>Offline.</b> Showing last sync ${age} ago. Approvals unavailable — deadlines can pass while disconnected.</span></div>`;
+  else if(STATE==="stale") o+=`<div class="banner warn"><span class="dot"></span><span><b>Data ${age} old</b> — past the engine's freshness threshold. Treat these numbers as unconfirmed.</span></div>`;
+  if(STATE==="paused") o+=`<div class="banner paused"><span class="dot"></span><span><b>New entries paused.</b> The engine is still managing exits.</span></div>`;
+  if(STATE==="live"||STATE==="paused") o+=`<div class="freshline">Synced ${age} ago · BASE book</div>`;
+  return `<div class="chrome">${o}</div>`;
+}
+const bandChip = () => `<span class="band-chip">P&L: <b>${BAND}</b></span>`;
+
+function shell({title,badge,body,nav,overlay}){
+  return `<div class="phone">
+    <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁ ▮</span></div>
+    <div class="appbar"><div class="appbar-row">
+      <span class="screen-title">${title}</span>${bandChip()}
+    </div></div>${chrome()}
+    <div class="body">${body}</div>
+    <div class="nav">${["Home","Positions","Risk","Journal","Tests"].map((n,i)=>
+      `<div class="${i===nav?"on":""}"><span class="glyph"></span>${n}${i===0&&badge?`<span class="badge">${badge}</span>`:""}</div>`).join("")}</div>
+    ${overlay||""}</div>`;
+}
+
+function pnlBlock(){
+  const w=[["Today","today"],["Week","wtd"],["Month","mtd"],["Year","ytd"]];
+  return `<div class="pnl-grid">${w.map(([l,k])=>{
+    const d=DATA.pnl[k], net=d.r[BAND]+d.u[BAND];
+    return `<div><div class="pw-l">${l}</div>
+      <div class="pw-v ${net<0?"neg":""}">${kmoney(net)}</div>
+      <div class="pw-split">${kmoney(d.r[BAND])} real<br>${kmoney(d.u[BAND])} unreal</div></div>`;
+  }).join("")}</div><div class="band-foot">Realized + unrealized · ${BAND} band</div>`;
+}
+function levBlock(){
+  const c=DATA.capital, pct=Math.round(c.deployed/c.target*100);
+  return `<div class="lev">
+    <div class="lev-bar"><i style="width:${pct}%"></i></div>
+    <div class="lev-nums">
+      <span>Deployed<b>${kmoney(c.deployed)}</b></span>
+      <span style="text-align:center">Idle<b>${kmoney(c.idle)}</b></span>
+      <span style="text-align:right">Target<b>${kmoney(c.target)}</b></span></div>
+    <div class="lev-note">${pct}% deployed. Idle capital is why per-position APR (~21%) runs well above portfolio return — the success bar is judged on the total.</div></div>`;
+}
+function posQuick(limit){
+  // Compressed twin of the board row: same contract-first order, one line of economics dropped.
+  return DATA.positions.filter(x=>x.exit).slice(0,limit||9).map(x=>{
+    const v=posPnl(x,BAND), cls = v<0 ? (x.drv==="vega"?"negv":"neg") : "";
+    return `<div class="prow" style="padding:9px 2px">
+      <div class="pmain">
+        <div class="pticker">${x.t} <span class="pcontract">$${x.strike} ${x.right} · ${x.expiry}${x.qty>1?` · ×${x.qty}`:""}</span>
+          <span class="exit-clock ${x.exit.d<=3?"soon":""}">${x.exit.type==="stop"?"stop":"expiry"} ${x.exit.d}d</span></div>
+        <div class="pmeta">sold ${prem(x.credit)} → now ${prem(x.mark[BAND])}${x.shares?` · ${x.shares.qty} sh`:""}</div></div>
+      <div class="pright"><div class="pnl ${cls}">${smoney(v)}</div>
+        ${x.drv==="vega"?`<div style="margin-top:3px"><span class="amark v">vega</span></div>`
+          :x.drv==="delta"?`<div style="margin-top:3px"><span class="amark d">Δ-driven</span></div>`:``}</div>
+    </div>`;
+  }).join("");
+}
+
+function dashQuiet(){
+  const body = `
+    <div class="section-h first"><span><span class="qnum">1</span>Decisions</span></div>
+    <div class="quiet"><div class="tick"></div><div>
+      <div class="quiet-t">Nothing needs you</div>
+      <div class="quiet-s">Next deadline-bearing check: tomorrow 09:30</div></div></div>
+    <div class="section-h"><span><span class="qnum">2</span>What we've made</span></div>
+    ${pnlBlock()}
+    <div class="section-h"><span><span class="qnum">3</span>How leveraged</span></div>
+    ${levBlock()}
+    <div class="section-h"><span><span class="qnum">4</span>Positions</span><a>All ›</a></div>
+    ${posQuick()}`;
+  return shell({title:"WheelHouse", body, nav:0});
+}
+
+// ── options[] renderer ────────────────────────────────────────────────────────
+// Adopted for the schema pass (PR #3). The card no longer picks its shape from `type`:
+// it derives the shape from the options the engine sends. `kind` is the stable category
+// §2's veto-rate metric counts, so labels can stay the engine's own words.
+function renderOptions(opts,canAct){
+  if(opts.some(o=>o.kind==="branch")){
+    // `is_default` is drawn as a label, never as a pre-selection: .sel belongs to the operator's
+    // own tap. Pre-selecting would make agreeing cost one tap and disagreeing cost two, which
+    // would bend §2's veto-rate metric with button styling rather than with rubric quality.
+    return `<div style="margin-bottom:10px">${opts.map(o=>
+      `<div class="branch"><div class="branch-t"><span class="radio"></span>${o.label}
+         ${o.is_default?`<span class="sugg">engine's pick</span>`:""}</div>
+       <div class="branch-d">${o.detail}</div></div>`).join("")}</div>
+      <div class="actions"><button class="btn primary" disabled>Confirm choice</button></div>
+      <div class="pick-note">Nothing pre-selected — Confirm enables once you pick a branch.</div>`;
+  }
+  return `<div class="actions">${opts.map(o=>
+    `<button class="btn ${o.is_default?"primary":o.kind==="defer"?"ghost":""}" ${canAct?"":"disabled"}>${o.label}</button>`
+  ).join("")}</div>`;
+}
+function optionsFoot(opts,note){
+  const reason = opts.filter(o=>o.requires_reason).map(o=>o.id);
+  return `<div class="verbmap">POST {option_id} · ${opts.map(o=>`${o.id} <span style="opacity:.7">${o.kind}</span>`).join(" / ")}${
+    reason.length?` · reason required on ${reason.join(", ")}`:""}${note?`<br>${note}`:""}</div>`;
+}
+
+function entryCard(d,open){
+  const canAct = STATE!=="offline";
+  return `<div class="card">
+    <div class="card-top"><div>
+      <div class="card-type">${d.type.replace(/_/g," ")}</div>
+      <div class="card-action">${d.action}</div>
+      <div class="pmeta" style="margin-top:3px">${d.sub}</div>
+    </div><span class="deadline">${d.deadline}</span></div>
+    <div class="headline-num"><span class="hn-value">${d.apr}%</span>
+      <span class="hn-unit">annualized<br>at floor</span>
+      <span class="hn-gate">✓ clears<br>20% gate</span></div>
+    <div class="kv">
+      <div><div class="kv-l">PREMIUM</div><div class="kv-v">$${d.premium[BAND].toFixed(2)} <em>${BAND}</em></div></div>
+      <div><div class="kv-l">IV RANK</div><div class="kv-v">${d.iv}</div></div>
+      <div><div class="kv-l">ASSIGN ODDS</div><div class="kv-v">${Math.round(d.odds*100)}%</div></div>
+    </div>
+    <details class="reasons" ${open?"open":""}>
+      <summary>Why the engine wants this (${d.reasons.length})</summary>
+      <ul>${d.reasons.map(r=>`<li>${r}</li>`).join("")}</ul></details>
+    ${renderOptions(d.options,canAct)}
+    ${optionsFoot(d.options)}
+    ${canAct?"":`<div class="offline-note"><b>Approvals need a live connection.</b> Approve round-trips to the engine — it can't be queued, because this deadline may pass before you reconnect.</div>`}
+  </div>`;
+}
+
+// No is_default: this card exists because the 2× rule and the attribution disagree, so the
+// engine has no recommendation to make. Exit and Hold render with equal weight; Snooze stays
+// lighter because deferring isn't a third position on the question.
+const VEGA_OPTIONS = [
+  {id:"exit_now",label:"Exit now",kind:"accept"},
+  {id:"hold",    label:"Hold",    kind:"reject",requires_reason:true},
+  {id:"snooze",  label:"Snooze",  kind:"defer"}
+];
+function vegaCard(open){
+  const canAct = STATE!=="offline";
+  return `<div class="card vega">
+    <div class="card-top"><div>
+      <div class="card-type v">hold or exit · vega-driven</div>
+      <div class="card-action">MSFT $430 put hit its 2× stop</div>
+      <div class="pmeta" style="margin-top:3px">Sold $3.10 · now $6.50 to close — 2.10× credit · 4 DTE</div>
+    </div><span class="deadline hot">41m</span></div>
+    <div class="attr v">
+      <div class="attr-h"><span>What moved the premium</span><span>vega 78%</span></div>
+      <div class="split"><i class="sd" style="width:22%"></i><i class="sv" style="width:78%"></i></div>
+      <div class="split-key"><span>Δ delta 22%</span><span>ν IV expansion 78%</span></div>
+      <div style="margin-top:7px">IV rank <b>54 → 81</b> since entry, stock still <b>2.1% above</b> strike. Adverse mark, thesis intact — the rubric's vega exception.</div>
+    </div>
+    <details class="reasons" ${open?"open":""}><summary>Rubric basis (3)</summary><ul>
+      <li>Stop-loss triggered at 2× credit — but attribution is vega-dominant</li>
+      <li>Vega-driven triggers raise a card instead of auto-exiting (gate matrix)</li>
+      <li>Recorded habit: these were held "more aggressively or for longer than usual"</li></ul></details>
+    ${renderOptions(VEGA_OPTIONS,canAct)}
+    ${optionsFoot(VEGA_OPTIONS,`"Hold" is <b>kind: reject</b> — it counts toward veto rate without the word ever appearing.<br>No <code>is_default</code>: the engine is escalating a conflict, not recommending.`)}
+    ${canAct?"":`<div class="offline-note"><b>Approvals need a live connection.</b> This card escalates to a pager push before its deadline expires.</div>`}
+  </div>`;
+}
+
+const BRANCH_OPTIONS = [
+  {id:"reenter_aggressive",label:"Re-enter, more aggressive",kind:"branch",is_default:true,
+   detail:"Sell a new put harvesting the post-drop IV, strike below the fresh 90-day low."},
+  {id:"cooldown",label:"Cooldown the name",kind:"branch",
+   detail:"Bench AMD for the cooldown period. No new entries; existing legs still managed."},
+  {id:"walk_away",label:"Walk away",kind:"branch",
+   detail:"Drop AMD from the active universe until manually re-added."}
+];
+function branchCard(){
+  const canAct = STATE!=="offline";
+  return `<div class="card">
+    <div class="card-top"><div>
+      <div class="card-type">post-loss branch</div>
+      <div class="card-action">AMD closed at a loss — what next?</div>
+      <div class="pmeta" style="margin-top:3px">Exited $170 put at 2× credit · realized −$412 (floor)</div>
+    </div><span class="deadline">1d 04h</span></div>
+    <div class="attr d">
+      <div class="attr-h"><span>What moved the premium</span><span>delta 81%</span></div>
+      <div class="split"><i class="sd" style="width:81%"></i><i class="sv" style="width:19%"></i></div>
+      <div class="split-key"><span>Δ delta 81%</span><span>ν IV 19%</span></div>
+      <div style="margin-top:7px">The stock slid through the strike. Not a vega mark — the thesis moved against us.</div>
+    </div>
+    ${renderOptions(BRANCH_OPTIONS,canAct)}
+    ${optionsFoot(BRANCH_OPTIONS,`No <b>reject</b> kind on this card — so it contributes nothing to veto rate, which is the right answer.<br><code>is_default</code> renders as a label here, not a pre-selection.`)}
+  </div>`;
+}
+
+function dashBusy(){
+  const body = `
+    <div class="section-h first"><span><span class="qnum">1</span>3 decisions need you</span><a>Deadline order</a></div>
+    ${vegaCard(true)}${entryCard(DATA.entry,false)}${branchCard()}
+    <div class="section-h"><span><span class="qnum">2</span>What we've made</span></div>
+    ${pnlBlock()}
+    <div class="section-h"><span><span class="qnum">3</span>How leveraged</span></div>
+    ${levBlock()}
+    <div class="section-h"><span><span class="qnum">4</span>Positions</span><a>All ›</a></div>
+    ${posQuick(3)}`;
+  return shell({title:"WheelHouse", badge:3, body, nav:0});
+}
+
+function vegaFrame(){ return shell({title:"WheelHouse", badge:3, body:vegaCard(true), nav:0}); }
+function branchFrame(){ return shell({title:"WheelHouse", badge:3, body:branchCard(), nav:0}); }
+
+function vetoSheet(){
+  const overlay = `<div class="scrim"></div><div class="sheet">
+    <div class="grabber"></div><h3>Why veto this?</h3>
+    <p class="why">One line. Vetoes and their reasons feed proposed rubric diffs — this text is how the strategy learns, so specifics beat categories.</p>
+    <div class="field">IV pop looks like the Aug 12 earnings date moving inside expiry, not a real vol bid<span class="caret"></span></div>
+    <div class="prompts">Prompts, not buttons — what did the engine miss? · what would change your mind? · is this the rule, or just this trade?</div>
+    <div class="actions"><button class="btn primary">Confirm veto</button><button class="btn ghost">Cancel</button></div>
+  </div>`;
+  return shell({title:"WheelHouse", badge:3, body:vegaCard(false)+entryCard(DATA.entry,false), nav:0, overlay});
+}
+
+function positions(){
+  const p=DATA.positions, total=p.reduce((s,x)=>s+posPnl(x,BAND),0);
+  const rows = p.map(x=>{
+    const v=posPnl(x,BAND), cls = v<0 ? (x.drv==="vega"?"negv":"neg") : "";
+
+    // ── line 1: what the contract IS, and what it has made ──────────────
+    const ident = x.strike
+      ? `<span class="pcontract">$${x.strike} ${x.right} · ${x.expiry}${x.qty>1?` · ×${x.qty}`:""}</span>`
+      : `<span class="pcontract none">no open contracts</span>`;
+
+    // ── line 1b: credit vs. cost-to-close — the gain/loss that matters on short premium.
+    // Credit is a fact (no band); the cost to close inherits the global band.
+    let econ = "";
+    if(x.credit!==null){
+      const ov=optPnl(x,BAND), sv=stockPnl(x);
+      const ocls = ov<0 ? (x.drv==="vega"?"negv":"neg") : "";
+      const mm = stopMult(x,BAND);
+      const mcol2 = mm>=2?(x.drv==="vega"?"var(--vega)":"var(--alarm-ink)"):mm>=1.5?"var(--warn-ink)":"";
+      const mult = `<span class="lab" style="${mcol2?`color:${mcol2};font-weight:650`:""}"> · ${mm.toFixed(2)}×</span>`;
+      if(x.shares){
+        // Two legs under one underlying (§6.1 is per-underlying), so each leg shows its own economics
+        // and the row total on line 1 is their sum — otherwise the row implies one contract made it all.
+        econ = `<div class="pecon"><span><span class="lab">${x.right.toLowerCase()}</span> sold <b>${prem(x.credit)}</b> → now <b>${prem(x.mark[BAND])}</b>${mult}</span>
+            <span class="leg ${ocls}">${smoney(ov)}</span></div>
+          <div class="pecon"><span><span class="lab">${x.shares.qty} sh</span> @ <b>${prem(x.shares.basis)}</b> → <b>${prem(x.px)}</b></span>
+            <span class="leg ${sv<0?"neg":""}">${smoney(sv)}</span></div>`;
+      } else {
+        econ = `<div class="pecon"><span>sold <b>${prem(x.credit)}</b> → now <b>${prem(x.mark[BAND])}</b>${mult}</span>
+          <span class="lab">${mm>=2?"past":"of"} the 2× stop</span></div>`;
+      }
+    }
+
+    // ── line 2: how the engine is managing it ───────────────────────────
+    let bar="";
+    if(x.dist!==null){
+      const col = x.dist<-3?"var(--alarm-line)":x.dist<0?"var(--warn-line)":"var(--ink-3)";
+      const w = Math.min(Math.abs(x.dist)/10*50,50);
+      bar = `<span class="distbar"><i style="position:absolute;top:0;bottom:0;left:${x.dist<0?17-w:17}px;width:${w}px;background:${col}"></i></span>`;
+    }
+    const mark = x.drv==="vega"?`<span class="amark v">vega</span>`
+               : x.drv==="delta"?`<span class="amark d">Δ-driven</span>`
+               : x.drv==="theta"?`<span class="amark t">theta</span>`:``;
+    return `<div class="prow stack">
+      <div class="pl1">
+        <div class="pident"><span class="pticker">${x.t}</span>${ident}</div>
+        <div class="pnl ${cls}">${x.credit!==null?smoney(v):"—"}</div>
+      </div>
+      ${econ}
+      <div class="pmanage">
+        <span class="wheel-dots">${[1,2,3,4].map(n=>`<i class="${n<=x.state?"on":""}"></i>`).join("")}</span>
+        <span class="pstate">${x.lab==="cash"?"cash":x.shares?"shares + call":"short "+x.right.toLowerCase()}</span>
+        ${x.exit?`<span class="exit-clock ${x.exit.d<=3?"soon":""}">${x.exit.type==="stop"?"stop":"exp"} ${x.exit.d}d</span>`:""}
+        ${x.dist!==null?`<span class="pdist">${bar} ${x.dist>0?"+":""}${x.dist}%</span>`:""}
+        ${mark}
+      </div></div>`;
+  }).join("");
+  const body = `
+    <div class="agg">
+      <div><div class="sg-label">Margin</div><div class="sg-value">62<small>%</small></div><div class="meter"><i style="width:62%"></i></div></div>
+      <div><div class="sg-label">Net exposure</div><div class="sg-value">$86.4<small>k</small></div><div class="meter"><i class="hot" style="width:77%"></i></div></div>
+      <div><div class="sg-label">Syn. cash</div><div class="sg-value">$41.2<small>k</small></div><div class="meter"><i style="width:38%"></i></div></div>
+    </div>
+    <div class="section-h"><span>5 underlyings</span><span style="font-weight:500;text-transform:none;letter-spacing:0">Total ${money(total)} <em style="font-style:normal;color:var(--ink-3)">(${BAND})</em></span></div>
+    ${rows}
+    <div class="band-foot" style="text-align:left">Credit received is a fact and carries no band. Cost to close, and every P&L above, is the ${BAND} value.</div>`;
+  return shell({title:"Positions", body, nav:1});
+}
+
+function detail(){
+  const x = DATA.positions[1];
+  const m = stopMult(x,BAND), fill = Math.min(m/2.5,1)*100, gate = 2/2.5*100;
+  const v = posPnl(x,BAND);
+  const body = `
+    <div class="dhead"><div class="dticker">MSFT <span style="font-size:12px;font-weight:500;color:var(--ink-3)">short put</span></div>
+      <div class="dsub">$${x.strike} ${x.right} · expires ${x.expiry} · ${x.dte} DTE · ×${x.qty} · entered Jul 15</div></div>
+    <div class="section-h">Economics</div>
+    <div class="econ-grid">
+      <div><div class="econ-l">Credit received</div><div class="econ-v">${money(x.credit*100*x.qty)}</div>
+        <div class="econ-s">${x.qty} × ${prem(x.credit)} at open · a fact, no band</div></div>
+      <div><div class="econ-l">Cost to close</div><div class="econ-v" style="color:var(--vega)">${money(x.mark[BAND]*100*x.qty)}</div>
+        <div class="econ-s">${x.qty} × ${prem(x.mark[BAND])} · ${BAND} band</div></div>
+    </div>
+    <div style="margin:11px 0 4px">
+      <div class="stopmeter"><i style="width:${fill}%;background:var(--vega)"></i><u style="left:${gate}%"></u></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink-3);margin-top:5px">
+        <span style="color:var(--vega);font-weight:650">${m.toFixed(2)}× credit</span><span>2× stop</span></div>
+    </div>
+    <div class="drow" style="border-top:1px solid var(--line-2)"><span>Unrealized</span>
+      <span style="color:var(--vega)">${smoney(v)} <em style="font-style:normal;font-weight:500;color:var(--ink-3)">(${BAND})</em></span></div>
+    <div class="pmeta" style="margin-top:8px;line-height:1.5">This is the number the 2× stop watches — it has already crossed. Attribution is vega-dominant, so the gate matrix raised a decision card instead of selling.</div>
+    <div class="section-h">Auto-exit</div>
+    <div class="quiet" style="background:var(--warn-bg);border-color:var(--warn-line)">
+      <div style="font-size:18px;flex:none">⏱</div><div>
+        <div class="quiet-t" style="color:var(--warn-ink)">Day-14 stop in 2 days</div>
+        <div class="quiet-s" style="color:var(--warn-ink)">Fires Jul 29, ahead of the Jul 31 expiry — but the 2× stop above got there first, and its card is open.</div></div></div>
+    <div class="section-h">IV context</div>
+    <div class="ivrow">
+      <div class="iv-b"><div class="iv-l">At entry</div><div class="iv-v">${x.iv[0]}</div></div>
+      <div style="font-size:15px;color:var(--ink-3)">→</div>
+      <div class="iv-b"><div class="iv-l">Now</div><div class="iv-v" style="color:var(--vega)">${x.iv[1]}</div>
+        <div class="iv-delta">+${x.iv[1]-x.iv[0]} rank</div></div>
+    </div>
+    <div class="section-h"><span>P&L attribution</span><span style="font-weight:500;text-transform:none;letter-spacing:0">${money(v)} <em style="font-style:normal;color:var(--ink-3)">(${BAND})</em></span></div>
+    <div class="attr v">
+      <div class="attr-h"><span>Vega-driven</span><span>78% of the move</span></div>
+      <div class="split"><i class="sd" style="width:22%"></i><i class="sv" style="width:78%"></i></div>
+      <div class="split-key"><span>Δ delta 22%</span><span>ν theta + vega 78%</span></div>
+      <div style="margin-top:7px">The mark is adverse because options got expensive, not because the stock broke. It sits 2.1% above strike — the thesis is intact.</div>
+    </div>
+    <div class="section-h">Position</div>
+    <div class="drow"><span>Stock price</span><span>$${x.px.toFixed(2)}</span></div>
+    <div class="drow"><span>Distance to strike</span><span style="color:var(--alarm-ink)">${x.dist}%</span></div>
+    <div class="drow"><span>Delta</span><span>${x.delta}</span></div>
+    <div class="drow"><span>Margin consumed</span><span>$6,900</span></div>
+    <div class="drow"><span>Assignment odds</span><span>52%</span></div>`;
+  return shell({title:"MSFT", body, nav:1});
+}
+
+function risk(){
+  const paused = STATE==="paused";
+  const body = `
+    <div class="hero">
+      <div class="hero-l">If every open position assigned tomorrow, against what's available to cover it.</div>
+      <div class="hero-bar"><i style="width:77%"></i></div>
+      <div class="hero-nums"><span>Assign-all cost<b>$86,400</b></span><span style="text-align:right">Cash + margin<b>$112,000</b></span></div>
+      <div class="hero-verdict">✓ Covered — 77% of available capacity</div></div>
+    <div class="section-h">Concentration by underlying</div>
+    ${[["TSLA",31],["MSFT",24],["GOOG",18],["AMD",15],["Other",12]].map(([t,p])=>
+      `<div class="conc-row"><span class="conc-t">${t}</span><span class="conc-bar"><i style="width:${p*3.2}%"></i></span><span class="conc-p">${p}%</span></div>`).join("")}
+    <div style="font-size:11px;color:var(--ink-3);margin-top:10px;line-height:1.5">Largest single name: TSLA at 31%. No per-name ceiling is set — the rubric flags this as an open parameter and the concentration-vs-yield sweep is meant to answer it.</div>
+    <div class="section-h">Kill switch</div>
+    <div class="killbox">
+      <h4>${paused?"New entries are paused":"New entries active"}</h4>
+      <p>Pausing stops the engine opening new positions. It <strong>keeps managing exits</strong> — rolls, buy-backs and assignments continue. Reversible at any time.</p>
+      <button class="killbtn ${paused?"on":""}">${paused?"Resume new entries":"Pause new entries"}</button></div>`;
+  return shell({title:"Risk", body, nav:2});
+}
+
+function widget(){
+  const p=DATA.positions.filter(x=>x.exit).slice(0,3);
+  const net = DATA.pnl.today.r[BAND]+DATA.pnl.today.u[BAND];
+  return `<div class="homescreen">
+    <div class="hs-time"><b>9:41</b><span>Monday 27 July</span></div>
+    <div class="widget">
+      <div class="w-top"><span class="w-name">WheelHouse</span><span class="w-pend">3 pending</span></div>
+      <div class="w-main"><span class="w-val" style="${net<0?"color:var(--alarm-ink)":""}">${money(net)}</span><span class="w-band">${BAND}</span></div>
+      <div class="w-sub">Today · realized + unrealized</div>
+      <div class="w-rows">${p.map(x=>{
+        const v=posPnl(x,BAND), cls=v<0?(x.drv==="vega"?"negv":"neg"):"";
+        return `<div class="w-row"><span>${x.t} <span style="color:var(--ink-3)">$${x.strike}${x.right[0]} · ${x.exit.type==="stop"?"stop":"exp"} ${x.exit.d}d</span></span>
+          <b class="${cls}">${smoney(v)}${x.drv==="vega"?" ν":x.drv==="delta"?" Δ":""}</b></div>`;
+      }).join("")}</div>
+    </div>
+    <div class="hs-dock"></div></div>`;
+}
+
+function notifs(){
+  return `<div class="homescreen" style="padding-top:30px">
+    <div class="hs-time" style="margin-bottom:18px"><b>2:14</b><span>Monday 27 July · Do Not Disturb on</span></div>
+    <div class="notif">
+      <div class="n-top"><span class="n-app">WheelHouse</span><span class="n-chan alarm">ALARM</span><span class="n-urg">urgency: page · bypassed DND</span></div>
+      <div class="n-title">TSLA gapped through $290 strike</div>
+      <div class="n-body">Assignment likely at expiry. $29,000 impact if assigned.</div></div>
+    <div class="notif">
+      <div class="n-top"><span class="n-app">WheelHouse</span><span class="n-chan dec">DECISION</span><span class="n-urg">urgency: page · escalated</span></div>
+      <div class="n-title">MSFT hold-or-exit expires in 41m</div>
+      <div class="n-body">Vega-driven stop. Was deferrable at 21:30 — escalated because the deadline would otherwise pass unseen.</div>
+      <div class="n-actions"><span class="n-btn">Exit now</span><span class="n-btn">Hold</span></div></div>
+    <div class="notif" style="opacity:.55">
+      <div class="n-top"><span class="n-app">WheelHouse</span><span class="n-chan dec">DECISION</span><span class="n-urg">urgency: deferrable · silenced</span></div>
+      <div class="n-title">New entry proposed — GOOG $175 put</div>
+      <div class="n-body">Deadline 09:45 tomorrow. Held silent by your DND settings.</div>
+      <div class="n-actions"><span class="n-reply">Veto reason…</span><span class="n-btn">Approve</span></div></div>
+    <div class="notif" style="opacity:.4">
+      <div class="n-top"><span class="n-app">WheelHouse</span><span class="n-chan fyi">FYI</span><span class="n-urg">urgency: deferrable · digest</span></div>
+      <div class="n-title">4 engine actions today</div>
+      <div class="n-body">GOOG buy-back at target · 2 fills · 1 expiry. Nothing needed you.</div></div>
+  </div>`;
+}
+
+const FRAMES = [
+  { fn:dashQuiet, title:"Home dashboard — quiet", note:"§6.2", isNew:true,
+    body:"The four questions in order — and question 1 shrinks to a strip when the answer is no. The old empty-state hero was too big to share a screen with 2–4, so the reassurance became one line and the space went to P&L and leverage. <b>The leverage note is doing quiet work</b>: it explains why a ~21% per-position APR and a 10% portfolio bar aren't a contradiction, which is exactly the sort of thing that quietly erodes trust if the screen never says it out loud." },
+  { fn:dashBusy, title:"Home dashboard — 3 pending", note:"§6.2", isNew:true,
+    body:"Cards dominate, but the dashboard survives below rather than being replaced — so \"how much have we made\" is never more than a scroll away. <b>Both new card types are here</b>, and both broke the button pattern. Switch <b>Connection → offline</b> to watch every action across all three disable at once." },
+  { fn:vegaFrame, title:"Vega hold-or-exit card", note:"gate matrix", isNew:true,
+    body:"The card the vega exception exists for. Attribution <em>is</em> the argument, so it takes the position the APR number holds on an entry card: <b>78% vega, stock still above strike</b> — adverse mark, thesis intact. Buttons say Exit / Hold rather than Approve / Veto, because \"approve\" on a stop card means <em>sell</em>, and that's a coin-flip to read at 6am. The mapping line underneath is the honest cost of that choice." },
+  { fn:branchFrame, title:"Post-loss branch card", note:"gate matrix", isNew:true,
+    body:"<b>Three-way, so it has no veto at all.</b> Approve/veto/snooze assumed a binary; this card doesn't have one. Drawn as named branches with their consequences spelled out, and a single confirm. This is the frame that convinced me the contract wants an <code>options[]</code> array rather than fixed verbs — see the note below." },
+  { fn:vetoSheet, title:"Veto reason sheet", note:"§6.2",
+    body:"Chips dropped, as we both landed. What replaced them is a line of <b>prompts that insert nothing</b> — they shape the answer without supplying it. The copy now says vetoes feed proposed rubric diffs, which is both truer and more motivating than \"training data\": §2 judges the strategy on whether veto rate <em>declines across rubric versions</em>, and that only works if the reasons are diffable." },
+  { fn:positions, title:"Positions board", note:"§6.1",
+    body:"<b>Re-ordered after the PR #3 review: the contract comes first.</b> Line one is identity and economics — <em>MSFT $430 PUT · Jul 31 · ×1</em>, then <em>sold $3.10 → now $6.50</em>. Line two is how the engine is managing it: wheel state, stop clock, cost-to-close as a multiple of credit, distance, attribution. The engine tokens were the right content in the wrong rank; a row that opens with wheel dots asks you to trust the machine before it has told you what you own.<br><br><b>The close price pays for its space twice.</b> It is the gain/loss that matters on short premium, and it is the number the 2× stop watches — MSFT reads <em>2.10× credit</em> on the row, which is precisely why its card exists. Stock price moved to detail; distance % carries most of it.<br><br><b>AMD is the awkward case and is drawn honestly.</b> §6.1 wants one row per underlying, but a covered-call state has two legs with different economics, so it gets two economics lines and the row total is their sum. A single \"sold → now\" there would imply one contract made the whole number. NVDA, holding cash, has no contract line at all — the row degrades to wheel state and a dash." },
+  { fn:detail, title:"Position detail", note:"§6.1", isNew:true,
+    body:"Now opens with an <b>economics block</b>: credit received (a fact, unbanded) against cost to close (banded), and the 2×-stop meter showing this position already past its trigger. Everything below is where the row overflowed to. The attribution split gets a real bar and a sentence, because <b>the number alone doesn't carry the judgment</b> — 78% vega only means something sitting next to \"2.1% above strike.\" Worth noting §2 runs this same machinery in reverse: wins arriving via delta rather than theta+vega are a red flag, so this view eventually needs a profitable-but-suspicious variant too." },
+  { fn:risk, title:"Risk + kill switch", note:"§6.4",
+    body:"Structurally unchanged. One line added under concentration: the rubric leaves per-name ceiling open, and TSLA at 31% is precisely the concentration-vs-yield question the instrument exists to answer — so the screen should pose it rather than just report it. Switch <b>Connection → paused</b>; the state still has to surface app-wide, not only here." },
+  { fn:widget, title:"Home-screen widget", note:"§6.6", isNew:true,
+    body:"In v1 now. <b>The hardest place to honour §6.7</b> — a band label costs real estate a widget doesn't have, so it's a chip beside the number rather than a word beneath it. Attribution compresses all the way to bare Δ / ν glyphs. Pending count is the widget's actual job; the P&L is what earns it a home-screen slot." },
+  { fn:notifs, title:"Notification triage", note:"§6.6", isNew:true,
+    body:"The triage model at 2am with DND on — four states at once. ALARM bypasses. A DECISION <b>escalated to page because its deadline would otherwise pass unseen</b>. The same class still deferrable and silenced, with direct-reply for the veto reason. And the FYI digest, which is where ~90% of pushes are supposed to land. Escalation is engine-side per §6.6; the app's job is honouring <code>urgency</code> and owning one DND-bypass channel whose permission it has to ask for explicitly." }
+];
+
+function render(){
+  document.getElementById("gallery").innerHTML = FRAMES.map(f=>
+    `<figure>${f.fn()}<figcaption>
+      <div class="cap-title">${f.title} <span class="sec">· ${f.note}</span>${f.isNew?`<span class="new">NEW</span>`:""}</div>
+      <div class="cap-body">${f.body}</div></figcaption></figure>`).join("");
+}
+document.getElementById("band-seg").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  BAND=b.dataset.band; [...e.currentTarget.children].forEach(x=>x.setAttribute("aria-pressed",x===b)); render();
+});
+document.getElementById("state-seg").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  STATE=b.dataset.state; [...e.currentTarget.children].forEach(x=>x.setAttribute("aria-pressed",x===b)); render();
+});
+render();
+</script>
+</body>
+</html>

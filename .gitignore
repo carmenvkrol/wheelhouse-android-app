@@ -1,0 +1,18 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# secrets & env — never commit
+.env
+.env.*
+*.pem
+*.keystore
+
+# android
+android/**/build/
+android/.gradle/
+android/local.properties
+
+# mock API server build output
+api/mock-server/out/
