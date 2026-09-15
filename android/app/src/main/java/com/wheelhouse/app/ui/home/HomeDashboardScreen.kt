@@ -240,6 +240,7 @@ sealed class DecisionCard {
     abstract val action: String
     abstract val sub: String
     abstract val deadlineLabel: String
+    abstract val axDeadlineLabel: String
     abstract val deadlineHot: Boolean
     abstract val options: List<DecisionOption>
 
@@ -249,6 +250,7 @@ sealed class DecisionCard {
         override val action: String,
         override val sub: String,
         override val deadlineLabel: String,
+        override val axDeadlineLabel: String = speakDeadline(deadlineLabel),
         override val deadlineHot: Boolean = false,
         val annualizedFloorPct: Double,
         val aprGatePct: Double = 20.0,
@@ -268,6 +270,7 @@ sealed class DecisionCard {
         override val action: String,
         override val sub: String,
         override val deadlineLabel: String,
+        override val axDeadlineLabel: String = speakDeadline(deadlineLabel),
         override val deadlineHot: Boolean = true,
         val split: AttributionSplit,
         val reasons: List<String>,
@@ -281,10 +284,38 @@ sealed class DecisionCard {
         override val action: String,
         override val sub: String,
         override val deadlineLabel: String,
+        override val axDeadlineLabel: String = speakDeadline(deadlineLabel),
         override val deadlineHot: Boolean = false,
         val split: AttributionSplit,
         override val options: List<DecisionOption>,
     ) : DecisionCard()
+}
+
+/**
+ * Expands a compact deadline label into something a screen reader can say:
+ * "41m" -> "41 minutes", "2h 14m" -> "2 hours 14 minutes", "1d 04h" -> "1 day 4 hours".
+ *
+ * The chip is written for the eye — narrow enough to sit beside the card header — and
+ * its unit letters are not words. CONTRACT.md carries only the compact form, so the
+ * spoken one is derived here rather than served. Anything that does not parse comes
+ * back unchanged, so an unexpected server string is spoken verbatim, not dropped.
+ *
+ * [DecisionCard.axDeadlineLabel] defaults to this, which is the point: the previews and
+ * the live data path cannot drift, because there is only one definition of how a
+ * deadline is spoken.
+ */
+fun speakDeadline(label: String): String {
+    val parts = Regex("(\\d+)\\s*([dhms])").findAll(label).map { match ->
+        val amount = match.groupValues[1].toInt()
+        val unit = when (match.groupValues[2]) {
+            "d" -> "day"
+            "h" -> "hour"
+            "m" -> "minute"
+            else -> "second"
+        }
+        if (amount == 1) "$amount $unit" else "$amount ${unit}s"
+    }.toList()
+    return if (parts.isEmpty()) label else parts.joinToString(" ")
 }
 
 private val VegaExitOptions = listOf(
@@ -937,6 +968,7 @@ private fun CardHeader(
     action: String,
     sub: String,
     deadlineLabel: String,
+    axDeadlineLabel: String,
     deadlineHot: Boolean,
     typeColor: Color = Ink3,
 ) {
@@ -959,12 +991,12 @@ private fun CardHeader(
             )
             Text(sub, modifier = Modifier.padding(top = 3.dp), fontSize = 10.5.sp, color = Ink3)
         }
-        DeadlineChip(deadlineLabel, deadlineHot)
+        DeadlineChip(deadlineLabel, axDeadlineLabel, deadlineHot)
     }
 }
 
 @Composable
-private fun DeadlineChip(label: String, hot: Boolean, modifier: Modifier = Modifier) {
+private fun DeadlineChip(label: String, axLabel: String, hot: Boolean, modifier: Modifier = Modifier) {
     val background = if (hot) WarnBg else Fill
     val outline = if (hot) WarnLine else Line2
     val ink = if (hot) WarnInk else Ink2
@@ -974,7 +1006,10 @@ private fun DeadlineChip(label: String, hot: Boolean, modifier: Modifier = Modif
             .clip(RoundedCornerShape(5.dp))
             .background(background)
             .border(1.dp, outline, RoundedCornerShape(5.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .semantics {
+                contentDescription = axLabel
+            },
         fontSize = 11.sp,
         fontWeight = FontWeight.SemiBold,
         color = ink,
@@ -1511,6 +1546,7 @@ private fun EntryDecisionCard(
             action = card.action,
             sub = card.sub,
             deadlineLabel = card.deadlineLabel,
+            axDeadlineLabel = card.axDeadlineLabel,
             deadlineHot = card.deadlineHot,
         )
         Spacer(Modifier.height(9.dp))
@@ -1544,6 +1580,7 @@ private fun VegaDecisionCard(
             action = card.action,
             sub = card.sub,
             deadlineLabel = card.deadlineLabel,
+            axDeadlineLabel = card.axDeadlineLabel,
             deadlineHot = card.deadlineHot,
             typeColor = Vega,
         )
@@ -1621,6 +1658,7 @@ private fun BranchDecisionCard(
             action = card.action,
             sub = card.sub,
             deadlineLabel = card.deadlineLabel,
+            axDeadlineLabel = card.axDeadlineLabel,
             deadlineHot = card.deadlineHot,
         )
         Spacer(Modifier.height(9.dp))
