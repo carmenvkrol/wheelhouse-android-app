@@ -1,5 +1,6 @@
 package com.wheelhouse.app.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -24,9 +26,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -39,7 +44,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -50,7 +54,16 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.CollectionInfo
+import androidx.compose.ui.semantics.CollectionItemInfo
+import androidx.compose.ui.semantics.collectionInfo
+import androidx.compose.ui.semantics.collectionItemInfo
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -227,6 +240,7 @@ sealed class DecisionCard {
     abstract val action: String
     abstract val sub: String
     abstract val deadlineLabel: String
+    abstract val axDeadlineLabel: String
     abstract val deadlineHot: Boolean
     abstract val options: List<DecisionOption>
 
@@ -236,6 +250,7 @@ sealed class DecisionCard {
         override val action: String,
         override val sub: String,
         override val deadlineLabel: String,
+        override val axDeadlineLabel: String = speakDeadline(deadlineLabel),
         override val deadlineHot: Boolean = false,
         val annualizedFloorPct: Double,
         val aprGatePct: Double = 20.0,
@@ -255,6 +270,7 @@ sealed class DecisionCard {
         override val action: String,
         override val sub: String,
         override val deadlineLabel: String,
+        override val axDeadlineLabel: String = speakDeadline(deadlineLabel),
         override val deadlineHot: Boolean = true,
         val split: AttributionSplit,
         val reasons: List<String>,
@@ -268,10 +284,38 @@ sealed class DecisionCard {
         override val action: String,
         override val sub: String,
         override val deadlineLabel: String,
+        override val axDeadlineLabel: String = speakDeadline(deadlineLabel),
         override val deadlineHot: Boolean = false,
         val split: AttributionSplit,
         override val options: List<DecisionOption>,
     ) : DecisionCard()
+}
+
+/**
+ * Expands a compact deadline label into something a screen reader can say:
+ * "41m" -> "41 minutes", "2h 14m" -> "2 hours 14 minutes", "1d 04h" -> "1 day 4 hours".
+ *
+ * The chip is written for the eye — narrow enough to sit beside the card header — and
+ * its unit letters are not words. CONTRACT.md carries only the compact form, so the
+ * spoken one is derived here rather than served. Anything that does not parse comes
+ * back unchanged, so an unexpected server string is spoken verbatim, not dropped.
+ *
+ * [DecisionCard.axDeadlineLabel] defaults to this, which is the point: the previews and
+ * the live data path cannot drift, because there is only one definition of how a
+ * deadline is spoken.
+ */
+fun speakDeadline(label: String): String {
+    val parts = Regex("(\\d+)\\s*([dhms])").findAll(label).map { match ->
+        val amount = match.groupValues[1].toInt()
+        val unit = when (match.groupValues[2]) {
+            "d" -> "day"
+            "h" -> "hour"
+            "m" -> "minute"
+            else -> "second"
+        }
+        if (amount == 1) "$amount $unit" else "$amount ${unit}s"
+    }.toList()
+    return if (parts.isEmpty()) label else parts.joinToString(" ")
 }
 
 private val VegaExitOptions = listOf(
@@ -924,6 +968,7 @@ private fun CardHeader(
     action: String,
     sub: String,
     deadlineLabel: String,
+    axDeadlineLabel: String,
     deadlineHot: Boolean,
     typeColor: Color = Ink3,
 ) {
@@ -946,12 +991,12 @@ private fun CardHeader(
             )
             Text(sub, modifier = Modifier.padding(top = 3.dp), fontSize = 10.5.sp, color = Ink3)
         }
-        DeadlineChip(deadlineLabel, deadlineHot)
+        DeadlineChip(deadlineLabel, axDeadlineLabel, deadlineHot)
     }
 }
 
 @Composable
-private fun DeadlineChip(label: String, hot: Boolean, modifier: Modifier = Modifier) {
+private fun DeadlineChip(label: String, axLabel: String, hot: Boolean, modifier: Modifier = Modifier) {
     val background = if (hot) WarnBg else Fill
     val outline = if (hot) WarnLine else Line2
     val ink = if (hot) WarnInk else Ink2
@@ -961,7 +1006,10 @@ private fun DeadlineChip(label: String, hot: Boolean, modifier: Modifier = Modif
             .clip(RoundedCornerShape(5.dp))
             .background(background)
             .border(1.dp, outline, RoundedCornerShape(5.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .semantics {
+                contentDescription = axLabel
+            },
         fontSize = 11.sp,
         fontWeight = FontWeight.SemiBold,
         color = ink,
@@ -1042,10 +1090,12 @@ private fun ReasonsDisclosure(reasons: List<String>, openByDefault: Boolean, mod
         Row(
             Modifier
                 .fillMaxWidth()
-                .clickable(
-                    onClickLabel = if (expanded) "Collapse reasons" else "Expand reasons",
-                    role = Role.Button,
-                ) { expanded = !expanded },
+                .clearAndSetSemantics {
+                    contentDescription = "Why the engine wants this (${reasons.size})"
+                    role = Role.Button
+                    stateDescription = if (expanded) "Expanded" else "Collapsed"
+                }
+                .clickable { expanded = !expanded },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(if (expanded) "▾" else "▸", fontSize = 9.sp, color = Ink3)
@@ -1057,10 +1107,27 @@ private fun ReasonsDisclosure(reasons: List<String>, openByDefault: Boolean, mod
             )
         }
         if (expanded) {
-            Column(Modifier.padding(top = 9.dp)) {
-                reasons.forEach {
-                    Row(Modifier.padding(bottom = 4.dp)) {
-                        Text("•  ", fontSize = 11.5.sp, color = Ink2)
+            Column(Modifier
+                .semantics {
+                    collectionInfo = CollectionInfo (
+                        reasons.size,
+                        columnCount = 1
+                    )
+                }
+                .padding(top = 9.dp)) {
+                reasons.forEachIndexed { index, it ->
+                    Row(Modifier
+                        .semantics {
+                            collectionItemInfo = CollectionItemInfo (
+                                rowIndex = index,
+                                rowSpan = 1,
+                                columnIndex = 0,
+                                columnSpan = 1
+                            )
+                        }
+                        .padding(bottom = 4.dp)
+                    ) {
+                        Text("•  ", fontSize = 11.5.sp, color = Ink2, modifier = Modifier.clearAndSetSemantics{})
                         Text(it, fontSize = 11.5.sp, color = Ink2, lineHeight = 16.sp)
                     }
                 }
@@ -1139,6 +1206,19 @@ private fun OptionsRow(
     }
 }
 
+/**
+ * A Material button per style, not a styled `Text`.
+ *
+ * The custom version put `clickable(role = Role.Button)` on the `Text` itself, so one
+ * semantics node carried both the text and the role — and the accessibility delegate
+ * writes `className` in order, letting the text's `android.widget.TextView` clobber the
+ * role's `android.widget.Button` (compose-ui 1.6.8, populateAccessibilityNodeInfoProperties).
+ * TalkBack reads the role off `className`, so it announced the label and no role at all.
+ *
+ * Material's buttons keep the role on the container and the text on a child, which also
+ * buys the 48dp minimum touch target (`minimumInteractiveComponentSize` inside
+ * `Surface(onClick)`) that 12.5sp text plus 9dp padding fell ~13dp short of.
+ */
 @Composable
 private fun OptionButton(
     option: DecisionOption,
@@ -1147,33 +1227,61 @@ private fun OptionButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val background = if (style == OptionButtonStyle.PRIMARY) Ink else Paper
-    val border = if (style == OptionButtonStyle.PRIMARY) Ink else Line
     val ink = when (style) {
         OptionButtonStyle.PRIMARY -> Paper
         OptionButtonStyle.GHOST -> Ink2
         OptionButtonStyle.PLAIN -> Ink
     }
-    Text(
-        option.label,
-        // alpha goes first (outermost) so it fades the whole button — box, border, and
-        // text together. Placed after background/border it only faded the text, and on
-        // this device that combination went fully blank on the enabled→disabled→enabled
-        // transition instead of just dimming (a real recomposition/layer bug, not a
-        // rendering nuance to preserve).
-        modifier = modifier
-            .alpha(if (enabled) 1f else 0.4f)
-            .clip(RoundedCornerShape(7.dp))
-            .background(background)
-            .border(1.dp, border, RoundedCornerShape(7.dp))
-            .clickable(enabled = enabled, onClickLabel = option.label, role = Role.Button, onClick = onClick)
-            .padding(vertical = 9.dp),
-        fontSize = 12.5.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = ink,
-        textAlign = TextAlign.Center,
-    )
+    val label: @Composable () -> Unit = {
+        Text(
+            option.label,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+        )
+    }
+    // Disabled reads as a fade of the whole button, as before — but through Material's
+    // disabled* colours rather than an `alpha` layer over the box, which is what blanked
+    // the button on the enabled -> disabled -> enabled transition.
+    when (style) {
+        OptionButtonStyle.PRIMARY -> Button(
+            onClick = onClick,
+            modifier = modifier,
+            enabled = enabled,
+            shape = OptionButtonShape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Ink,
+                contentColor = ink,
+                disabledContainerColor = Ink.copy(alpha = 0.4f),
+                disabledContentColor = ink.copy(alpha = 0.7f),
+            ),
+            elevation = null,
+            contentPadding = OptionButtonPadding,
+            content = { label() },
+        )
+        OptionButtonStyle.GHOST, OptionButtonStyle.PLAIN -> OutlinedButton(
+            onClick = onClick,
+            modifier = modifier,
+            enabled = enabled,
+            shape = OptionButtonShape,
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = Paper,
+                contentColor = ink,
+                disabledContainerColor = Paper,
+                disabledContentColor = ink.copy(alpha = 0.4f),
+            ),
+            border = BorderStroke(1.dp, if (enabled) Line else Line.copy(alpha = 0.4f)),
+            contentPadding = OptionButtonPadding,
+            content = { label() },
+        )
+    }
 }
+
+private val OptionButtonShape = RoundedCornerShape(7.dp)
+
+/** Horizontal room for "Re-enter, more aggressive"; vertical is governed by Material's 40dp
+ *  MinHeight and the 48dp touch target, so 9dp here only matters for taller labels. */
+private val OptionButtonPadding = PaddingValues(horizontal = 6.dp, vertical = 9.dp)
 
 /**
  * Branch cards pick a shape, not an accept/reject/defer verb. `is_default` renders as the
@@ -1438,6 +1546,7 @@ private fun EntryDecisionCard(
             action = card.action,
             sub = card.sub,
             deadlineLabel = card.deadlineLabel,
+            axDeadlineLabel = card.axDeadlineLabel,
             deadlineHot = card.deadlineHot,
         )
         Spacer(Modifier.height(9.dp))
@@ -1471,6 +1580,7 @@ private fun VegaDecisionCard(
             action = card.action,
             sub = card.sub,
             deadlineLabel = card.deadlineLabel,
+            axDeadlineLabel = card.axDeadlineLabel,
             deadlineHot = card.deadlineHot,
             typeColor = Vega,
         )
@@ -1548,6 +1658,7 @@ private fun BranchDecisionCard(
             action = card.action,
             sub = card.sub,
             deadlineLabel = card.deadlineLabel,
+            axDeadlineLabel = card.axDeadlineLabel,
             deadlineHot = card.deadlineHot,
         )
         Spacer(Modifier.height(9.dp))
