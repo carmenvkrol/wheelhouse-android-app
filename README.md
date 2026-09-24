@@ -5,7 +5,7 @@ options wheel strategy can be run by a decision engine. The app is the operator'
 onto that engine: it shows the paper book, the P&L, the risk picture, and the decisions
 waiting on a human.
 
-**This repository is an excerpt.** The wider project is private. What's here is the
+**This repository is an excerpt.** It contains thee code for an accessibility experiment described in [I Built an Android App with Claude. Then I Tested Its Accessibility](https://www.carmenkrol.com/blog/claude-android-app-accessibility/).  The wider project is private. What's here is the
 Android app, its design documents, and a mock API server — enough to build the app, run
 it, and read how it was put together, but not the engine behind it.
 
